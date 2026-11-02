@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Midnight in the Round City</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Cinzel & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .historical-title { font-family: 'Cinzel', serif; }
+        canvas { touch-action: none; background: #0b1329; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-full flex flex-col selection:bg-amber-500 selection:text-slate-950 overflow-hidden">
+
+    <!-- Header -->
+    <header class="bg-slate-900 border-b border-amber-900/40 py-3 px-6 shadow-xl flex-shrink-0 relative z-20">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="bg-amber-600 p-2 rounded-xl shadow-inner border border-amber-500/30">
+                    <svg class="w-6 h-6 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="historical-title text-xl sm:text-2xl font-black text-amber-500 tracking-wider">Midnight in the Round City</h1>
+                    <p class="text-[11px] text-slate-400 font-medium uppercase tracking-wide">8th-Century Baghdad • 3-Player Circular Court Tactical Board</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-4 bg-slate-950/70 px-4 py-2 rounded-xl border border-slate-800 text-xs">
+                <div>
+                    <span class="text-slate-400">Current Turn:</span> <span id="ui-current-player" class="font-bold text-amber-400">Player 1 (Harun)</span>
+                </div>
+                <div class="h-4 w-px bg-slate-800"></div>
+                <div>
+                    <span class="text-slate-400">Phase:</span> <span id="ui-current-phase" class="font-bold text-emerald-400">Play Whisper Card</span>
+                </div>
+                <div class="h-4 w-px bg-slate-800"></div>
+                <div>
+                    <span class="text-slate-400">Round:</span> <span id="ui-round" class="font-bold text-slate-200">1 / 5</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Game Layout -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 grid grid-cols-1 lg:grid-cols-4 gap-4 overflow-hidden">
+        
+        <!-- Canvas Board & Player Scores (Span 3) -->
+        <div class="lg:col-span-3 bg-slate-900 rounded-2xl p-4 border border-slate-800 shadow-2xl flex flex-col items-center justify-between relative overflow-hidden">
+            
+            <!-- Top Player Score Strip -->
+            <div class="grid grid-cols-3 gap-3 w-full max-w-2xl mb-2">
+                <div id="pbox-1" class="bg-amber-950/40 p-2.5 rounded-xl border border-amber-500/50 flex justify-between items-center transition">
+                    <div>
+                        <div class="text-[10px] text-amber-400 font-bold uppercase">Player 1 (Harun)</div>
+                        <div class="text-xs font-semibold text-slate-200"><span id="score-p1">0</span> Points</div>
+                    </div>
+                    <span class="text-lg">👑</span>
+                </div>
+                <div id="pbox-2" class="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center transition">
+                    <div>
+                        <div class="text-[10px] text-cyan-400 font-bold uppercase">Player 2 (Zubaida)</div>
+                        <div class="text-xs font-semibold text-slate-200"><span id="score-p2">0</span> Points</div>
+                    </div>
+                    <span class="text-lg">🌙</span>
+                </div>
+                <div id="pbox-3" class="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center transition">
+                    <div>
+                        <div class="text-[10px] text-purple-400 font-bold uppercase">Player 3 (Ja'far)</div>
+                        <div class="text-xs font-semibold text-slate-200"><span id="score-p3">0</span> Points</div>
+                    </div>
+                    <span class="text-lg">📜</span>
+                </div>
+            </div>
+
+            <!-- Canvas Wrapper -->
+            <div class="relative w-full flex-1 flex items-center justify-center overflow-hidden min-h-[380px]">
+                <canvas id="gameCanvas" width="560" height="420" class="rounded-xl border-2 border-slate-800 shadow-inner max-w-full max-h-full"></canvas>
+            </div>
+
+            <!-- Action Controls / Phase Bar -->
+            <div class="mt-3 flex items-center justify-between w-full max-w-2xl px-2">
+                <div id="instruction-banner" class="text-xs text-amber-400 font-medium">
+                    Select a Whisper Card from your hand or click a puppet on the circular board to move.
+                </div>
+                <button id="btn-end-turn" onclick="nextPhase()" class="px-5 py-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-black rounded-xl shadow-lg border border-amber-400/50 text-xs transition transform active:scale-95">
+                    End Phase / Turn
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Control Panel: Hand of Whispers & Action Log (Span 1) -->
+        <div class="bg-slate-900 rounded-2xl p-4 border border-slate-800 shadow-xl flex flex-col space-y-4 overflow-y-auto">
+            
+            <!-- Hand of Whisper Cards -->
+            <div>
+                <h3 class="historical-title text-sm font-bold text-amber-400 flex items-center space-x-2 mb-2">
+                    <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                    <span>Your Whisper Hand (3 Cards)</span>
+                </h3>
+                <div id="whisper-cards-container" class="space-y-2">
+                    <!-- Cards injected via JS -->
+                </div>
+            </div>
+
+            <!-- Action Log -->
+            <div class="flex-1 flex flex-col min-h-[160px]">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-2">
+                    <h3 class="historical-title text-xs font-bold text-slate-300">Court Chronicle Log</h3>
+                </div>
+                <div id="action-log" class="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-1 text-[11px]">
+                    <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-800/80 text-slate-300">
+                        <span class="text-amber-400 font-bold">Midnight Approaches:</span> The Round City gates are locked. 3 players vie for court influence using the Prince, Vizier, and Executioner.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal: Game Over / Victory -->
+    <div id="gameover-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-md w-full p-6 shadow-2xl text-center space-y-4">
+            <div id="modal-icon" class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto text-3xl border border-amber-500/30">👑</div>
+            <h3 id="modal-title" class="historical-title text-2xl font-bold text-amber-400">Dawn Over Baghdad</h3>
+            <p id="modal-desc" class="text-xs text-slate-300 leading-relaxed">The final district tallies have been recorded by the Grand Scribe.</p>
+            <div class="pt-3">
+                <button onclick="restartGame()" class="w-full py-3 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold rounded-xl text-sm transition shadow-lg">New Court Gathering</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game State
+        let currentRound = 1;
+        let maxRounds = 5;
+        let currentPlayer = 0; // 0: P1, 1: P2, 2: P3
+        let currentPhase = 'playCard'; // 'playCard', 'movePuppet', 'resolve'
+        let selectedCard = null;
+        let selectedPuppet = null; // 'prince', 'vizier', 'executioner'
+
+        let scores = [0, 0, 0];
+
+        // 3 Circular Districts
+        const districts = [
+            { id: 0, name: "District of Merchants", angle: -Math.PI / 2, color: '#f59e0b', bonus: 3 },
+            { id: 1, name: "District of Scholars", angle: Math.PI / 6, color: '#06b6d4', bonus: 4 },
+            { id: 2, name: "District of Guards", angle: (5 * Math.PI) / 6, color: '#ec4899', bonus: 5 }
+        ];
+
+        // Shared Puppets
+        let puppets = {
+            prince: { name: "The Prince", districtId: 0, icon: '👑', color: '#fbbf24' },
+            vizier: { name: "The Vizier", districtId: 1, icon: '📜', color: '#22d3ee' },
+            executioner: { name: "The Executioner", districtId: 2, icon: '🪓', color: '#f43f5e' }
+        };
+
+        // Player Hands & Deck of Whisper Cards
+        const whisperDeck = [
+            { id: 1, name: "Djinn's Bargain", desc: "Move any puppet +2 districts clockwise and gain +2 pts.", value: 2, type: 'moveBonus' },
+            { id: 2, name: "Royal Amnesty", desc: "Swap positions of the Prince and Executioner.", value: 0, type: 'swap' },
+            { id: 3, name: "Scribe's Ledger", desc: "Score immediate bonus points equal to the district bonus.", value: 4, type: 'score' },
+            { id: 4, name: "Shadows of the Souk", desc: "Move any puppet to any district of your choice.", value: 1, type: 'teleport' },
+            { id: 5, name: "Vizier's Counsel", desc: "Gain +3 influence points in your current leading district.", value: 3, type: 'influence' }
+        ];
+
+        let playerHands = [
+            [whisperDeck[0], whisperDeck[1], whisperDeck[2]],
+            [whisperDeck[1], whisperDeck[2], whisperDeck[3]],
+            [whisperDeck[2], whisperDeck[3], whisperDeck[4]]
+        ];
+
+        window.onload = function() {
+            updateUI();
+            setupCanvasInteraction();
+            requestAnimationFrame(renderLoop);
+        }
+
+        function setupCanvasInteraction() {
+            canvas.addEventListener('click', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+                const mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+                let centerX = canvas.width / 2;
+                let centerY = canvas.height / 2;
+                let radius = 110;
+
+                // Check click on puppets or districts
+                for (let key in puppets) {
+                    let pup = puppets[key];
+                    let distObj = districts[pup.districtId];
+                    let px = centerX + Math.cos(distObj.angle) * radius;
+                    let py = centerY + Math.sin(distObj.angle) * radius;
+
+                    if (Math.hypot(px - mouseX, py - mouseY) < 30) {
+                        if (currentPhase === 'movePuppet') {
+                            selectedPuppet = key;
+                            addLog(`Player ${currentPlayer+1} selected ${pup.name}. Now click a target district to relocate.`, 'Puppet Selected');
+                            render();
+                        }
+                    }
+                }
+
+                // Check click on district nodes for movement
+                districts.forEach(dist => {
+                    let dx = centerX + Math.cos(dist.angle) * radius;
+                    let dy = centerY + Math.sin(dist.angle) * radius;
+                    if (Math.hypot(dx - mouseX, dy - mouseY) < 45) {
+                        if (currentPhase === 'movePuppet' && selectedPuppet) {
+                            let oldDist = puppets[selectedPuppet].districtId;
+                            puppets[selectedPuppet].districtId = dist.id;
+                            addLog(`Player ${currentPlayer+1} moved ${puppets[selectedPuppet].name} from ${districts[oldDist].name} to ${dist.name}.`, 'Movement');
+                            
+                            // Score calculation
+                            if (selectedPuppet === 'prince') scores[currentPlayer] += dist.bonus;
+                            if (selectedPuppet === 'vizier') scores[currentPlayer] += 2;
+
+                            currentPhase = 'resolve';
+                            selectedPuppet = null;
+                            updateUI();
+                        }
+                    }
+                });
+            });
+        }
+
+        function selectCard(cardIndex) {
+            if (currentPhase !== 'playCard') return;
+            selectedCard = playerHands[currentPlayer][cardIndex];
+            addLog(`Player ${currentPlayer+1} played whisper card: "${selectedCard.name}".`, 'Whisper Played');
+            
+            // Apply card bonus
+            if (selectedCard.type === 'score') scores[currentPlayer] += selectedCard.value;
+            if (selectedCard.type === 'influence') scores[currentPlayer] += selectedCard.value;
+
+            // Remove card from hand
+            playerHands[currentPlayer].splice(cardIndex, 1);
+            // Draw new card
+            playerHands[currentPlayer].push(whisperDeck[Math.floor(Math.random() * whisperDeck.length)]);
+
+            currentPhase = 'movePuppet';
+            updateUI();
+        }
+
+        function nextPhase() {
+            if (currentPhase === 'playCard') {
+                addLog(`Player ${currentPlayer+1} skipped playing a whisper card.`, 'Phase Skip');
+                currentPhase = 'movePuppet';
+            } else if (currentPhase === 'movePuppet') {
+                addLog(`Player ${currentPlayer+1} must click a puppet and district to move before ending turn.`, 'Warning');
+                return;
+            } else if (currentPhase === 'resolve') {
+                // Advance turn or round
+                currentPlayer++;
+                if (currentPlayer >= 3) {
+                    currentPlayer = 0;
+                    currentRound++;
+                    if (currentRound > maxRounds) {
+                        triggerGameOver();
+                        return;
+                    }
+                }
+                currentPhase = 'playCard';
+                selectedCard = null;
+                addLog(`Turn passed to Player ${currentPlayer+1}. Round ${currentRound} of ${maxRounds}.`, 'New Turn');
+            }
+            updateUI();
+        }
+
+        function renderLoop() {
+            render();
+            requestAnimationFrame(renderLoop);
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            let centerX = canvas.width / 2;
+            let centerY = canvas.height / 2;
+            let radius = 110;
+
+            // Draw Central Round City Citadel
+            ctx.fillStyle = '#1e293b';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 55, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#d97706';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            ctx.fillStyle = '#fbbf24';
+            ctx.font = 'bold 12px Cinzel, serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText("BAGHDAD", centerX, centerY - 6);
+            ctx.font = '10px Inter, sans-serif';
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillText("Round City", centerX, centerY + 10);
+
+            // Draw Districts connecting lines
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 2;
+            districts.forEach(d => {
+                let dx = centerX + Math.cos(d.angle) * radius;
+                let dy = centerY + Math.sin(d.angle) * radius;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(dx, dy);
+                ctx.stroke();
+            });
+
+            // Draw Districts nodes
+            districts.forEach(d => {
+                let dx = centerX + Math.cos(d.angle) * radius;
+                let dy = centerY + Math.sin(d.angle) * radius;
+
+                ctx.fillStyle = '#0f172a';
+                ctx.beginPath();
+                ctx.arc(dx, dy, 42, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = d.color;
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = 'bold 10px Inter, sans-serif';
+                ctx.fillText(d.name.split(' ')[2], dx, dy - 8);
+                ctx.fillStyle = d.color;
+                ctx.font = 'bold 11px Cinzel, serif';
+                ctx.fillText(`+${d.bonus} pts`, dx, dy + 8);
+            });
+
+            // Draw Shared Puppets on their current districts
+            for (let key in puppets) {
+                let pup = puppets[key];
+                let distObj = districts[pup.districtId];
+                // Offset slightly if multiple puppets in same district
+                let offsetAngle = key === 'prince' ? -0.3 : (key === 'vizier' ? 0 : 0.3);
+                let px = centerX + Math.cos(distObj.angle + offsetAngle) * (radius - 12);
+                let py = centerY + Math.sin(distObj.angle + offsetAngle) * (radius - 12);
+
+                ctx.fillStyle = pup.color;
+                ctx.beginPath();
+                ctx.arc(px, py, 16, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#0f172a';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                ctx.font = '14px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(pup.icon, px, py);
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('ui-current-player').innerText = `Player ${currentPlayer + 1} (${['Harun', 'Zubaida', "Ja'far"][currentPlayer]})`;
+            document.getElementById('ui-current-phase').innerText = currentPhase === 'playCard' ? 'Play Whisper Card' : (currentPhase === 'movePuppet' ? 'Move Shared Puppet' : 'Resolve Turn');
+            document.getElementById('ui-round').innerText = `${currentRound} / ${maxRounds}`;
+
+            document.getElementById('score-p1').innerText = scores[0];
+            document.getElementById('score-p2').innerText = scores[1];
+            document.getElementById('score-p3').innerText = scores[2];
+
+            // Highlight active player box
+            for (let i = 0; i < 3; i++) {
+                const box = document.getElementById(`pbox-${i+1}`);
+                if (i === currentPlayer) {
+                    box.className = "bg-amber-950/40 p-2.5 rounded-xl border border-amber-500/50 flex justify-between items-center transition shadow-md";
+                } else {
+                    box.className = "bg-slate-950/50 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center transition";
+                }
+            }
+
+            // Render Whisper Hand
+            const handContainer = document.getElementById('whisper-cards-container');
+            handContainer.innerHTML = '';
+            playerHands[currentPlayer].forEach((card, idx) => {
+                const cardDiv = document.createElement('div');
+                cardDiv.className = `p-2.5 rounded-xl border transition cursor-pointer ${currentPhase === 'playCard' ? 'bg-slate-950/80 hover:bg-slate-800 border-slate-800 hover:border-amber-500/50' : 'bg-slate-950/40 border-slate-900 opacity-60 pointer-events-none'}`;
+                cardDiv.innerHTML = `
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-bold text-amber-400 text-xs">${card.name}</span>
+                        <span class="text-[10px] px-1.5 py-0.5 bg-amber-500/10 text-amber-400 rounded border border-amber-500/30">Whisper</span>
+                    </div>
+                    <p class="text-[11px] text-slate-300 leading-tight">${card.desc}</p>
+                `;
+                cardDiv.onclick = () => selectCard(idx);
+                handContainer.appendChild(cardDiv);
+            });
+
+            // Instruction banner
+            const banner = document.getElementById('instruction-banner');
+            if (currentPhase === 'playCard') banner.innerText = `Player ${currentPlayer+1}: Choose a Whisper Card or click End Phase.`;
+            else if (currentPhase === 'movePuppet') banner.innerText = `Player ${currentPlayer+1}: Click a shared puppet (👑 📜 🪓) then click a target district node to relocate.`;
+            else if (currentPhase === 'resolve') banner.innerText = `Movement resolved! Click End Phase / Turn to pass to next player.`;
+        }
+
+        function addLog(text, title) {
+            const logContainer = document.getElementById('action-log');
+            const item = document.createElement('div');
+            item.className = "bg-slate-950/60 p-2 rounded-lg border border-slate-800/80 text-slate-300";
+            item.innerHTML = `<span class="text-amber-400 font-bold">${title}:</span> ${text}`;
+            logContainer.prepend(item);
+        }
+
+        function triggerGameOver() {
+            let maxScore = Math.max(...scores);
+            let winnerIdx = scores.indexOf(maxScore);
+            let winnerName = ['Harun', 'Zubaida', "Ja'far"][winnerIdx];
+
+            document.getElementById('modal-title').innerText = `Victory for ${winnerName}!`;
+            document.getElementById('modal-desc').innerText = `Player ${winnerIdx + 1} (${winnerName}) triumphed in the Round City with ${maxScore} court influence points!`;
+            document.getElementById('gameover-modal').classList.remove('hidden');
+        }
+
+        function restartGame() {
+            currentRound = 1;
+            currentPlayer = 0;
+            currentPhase = 'playCard';
+            scores = [0, 0, 0];
+            puppets.prince.districtId = 0;
+            puppets.vizier.districtId = 1;
+            puppets.executioner.districtId = 2;
+            document.getElementById('gameover-modal').classList.add('hidden');
+            document.getElementById('action-log').innerHTML = `<div class="bg-slate-950/60 p-2 rounded-lg border border-slate-800/80 text-slate-300"><span class="text-amber-400 font-bold">New Gathering:</span> Court reassembled in Baghdad.</div>`;
+            updateUI();
+        }
+    </script>
+</body>
+</html>
