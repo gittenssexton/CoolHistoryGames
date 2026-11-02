@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoolHistoryGames - Limes Germanicus</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Cinzel & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .historical-title { font-family: 'Cinzel', serif; }
+        canvas { touch-action: none; background: #263321; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-full flex flex-col selection:bg-amber-500 selection:text-slate-950 overflow-hidden">
+
+    <!-- Header -->
+    <header class="bg-slate-900 border-b border-amber-900/40 py-3 px-6 shadow-xl flex-shrink-0 relative z-20">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="bg-amber-600 p-2 rounded-xl shadow-inner border border-amber-500/30">
+                    <svg class="w-6 h-6 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="historical-title text-xl sm:text-2xl font-black text-amber-500 tracking-wider">Limes Germanicus: Frontier Defense</h1>
+                    <p class="text-[11px] text-slate-400 font-medium uppercase tracking-wide">Roman Castrum Fortification • 180 CE</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-4 bg-slate-950/70 px-4 py-2 rounded-xl border border-slate-800">
+                <div class="flex items-center space-x-1.5">
+                    <span class="text-amber-400 font-bold">🪙</span>
+                    <div>
+                        <div class="text-[9px] uppercase font-bold text-slate-400">Denarii</div>
+                        <div id="ui-gold" class="text-sm font-black text-amber-400">250</div>
+                    </div>
+                </div>
+                <div class="h-6 w-px bg-slate-800"></div>
+                <div class="flex items-center space-x-1.5">
+                    <span class="text-rose-500 font-bold">🛡️</span>
+                    <div>
+                        <div class="text-[9px] uppercase font-bold text-slate-400">Castellum Integrity</div>
+                        <div id="ui-hp" class="text-sm font-black text-rose-400">20 / 20</div>
+                    </div>
+                </div>
+                <div class="h-6 w-px bg-slate-800"></div>
+                <div>
+                    <div class="text-[9px] uppercase font-bold text-slate-400">Wave</div>
+                    <div id="ui-wave" class="text-sm font-black text-slate-200">1 / 10</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Game Layout -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 grid grid-cols-1 lg:grid-cols-4 gap-4 overflow-hidden">
+        
+        <!-- Canvas & Battlefield (Span 3) -->
+        <div class="lg:col-span-3 bg-slate-900 rounded-2xl p-4 border border-slate-800 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden">
+            <div class="absolute top-3 left-4 z-10 flex items-center space-x-2 bg-slate-950/80 px-3 py-1.5 rounded-lg border border-slate-800 text-xs">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span id="ui-gamestate" class="font-bold text-slate-300">Phase: Prepare Defenses</span>
+            </div>
+
+            <!-- Canvas Wrapper -->
+            <div class="relative w-full flex-1 flex items-center justify-center overflow-hidden min-h-[400px]">
+                <canvas id="gameCanvas" width="800" height="520" class="rounded-xl border-2 border-slate-800 shadow-inner max-w-full max-h-full"></canvas>
+            </div>
+
+            <!-- Bottom Action Bar -->
+            <div class="mt-3 flex items-center justify-between w-full max-w-3xl px-2">
+                <div class="text-xs text-slate-400">
+                    <span class="text-amber-400 font-bold">Click</span> grid tile to place cohort/battery. Click placed unit to inspect.
+                </div>
+                <button id="btn-start-wave" onclick="startWave()" class="px-6 py-2.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-black rounded-xl shadow-lg border border-amber-400/50 flex items-center space-x-2 transition transform active:scale-95">
+                    <historical-title class="tracking-wider text-sm">Commence Wave</historical-title>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Control Panel: Towers & Inspector (Span 1) -->
+        <div class="bg-slate-900 rounded-2xl p-4 border border-slate-800 shadow-xl flex flex-col space-y-4 overflow-y-auto">
+            <div class="border-b border-slate-800 pb-2">
+                <h3 class="historical-title text-sm font-bold text-amber-400 flex items-center space-x-2">
+                    <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                    <span>Auxilia & Artillery Arsenal</span>
+                </h3>
+                <p class="text-[11px] text-slate-400 mt-0.5">Select a unit to deploy along the Limes road network.</p>
+            </div>
+
+            <!-- Tower Cards -->
+            <div class="space-y-3">
+                <!-- Auxiliarii -->
+                <div onclick="selectTowerType('auxiliary')" id="card-auxiliary" class="p-3 bg-slate-950/70 hover:bg-slate-800/80 rounded-xl border-2 border-slate-800 cursor-pointer transition group">
+                    <div class="flex justify-between items-start mb-1">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-lg">🛡️</span>
+                            <div>
+                                <h4 class="font-bold text-slate-200 text-xs">Auxiliarii Cohort</h4>
+                                <span class="text-[10px] text-amber-400 font-semibold">100 Denarii</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 bg-slate-900 text-[10px] rounded text-slate-300 border border-slate-800">Melee / Block</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 leading-tight">Short range infantry. High attack speed, blocks barbarian advance.</p>
+                </div>
+
+                <!-- Ballista Battery -->
+                <div onclick="selectTowerType('ballista')" id="card-ballista" class="p-3 bg-slate-950/70 hover:bg-slate-800/80 rounded-xl border-2 border-slate-800 cursor-pointer transition group">
+                    <div class="flex justify-between items-start mb-1">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-lg">🎯</span>
+                            <div>
+                                <h4 class="font-bold text-slate-200 text-xs">Ballista Battery</h4>
+                                <span class="text-[10px] text-amber-400 font-semibold">175 Denarii</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 bg-slate-900 text-[10px] rounded text-slate-300 border border-slate-800">Siege / Splash</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 leading-tight">Heavy artillery. Long range, devastating splash impact, slow reload.</p>
+                </div>
+
+                <!-- Scorpio Post -->
+                <div onclick="selectTowerType('scorpio')" id="card-scorpio" class="p-3 bg-slate-950/70 hover:bg-slate-800/80 rounded-xl border-2 border-slate-800 cursor-pointer transition group">
+                    <div class="flex justify-between items-start mb-1">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-lg">🏹</span>
+                            <div>
+                                <h4 class="font-bold text-slate-200 text-xs">Scorpio Post</h4>
+                                <span class="text-[10px] text-amber-400 font-semibold">125 Denarii</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 bg-slate-900 text-[10px] rounded text-slate-300 border border-slate-800">Precision / Armor</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 leading-tight">Precision bolt shooter. Pierces armor of heavy chieftain raiders.</p>
+                </div>
+            </div>
+
+            <!-- Selected Tower Inspector -->
+            <div id="inspector-panel" class="bg-slate-950/80 rounded-xl p-3 border border-slate-800 flex-1 flex flex-col justify-between hidden">
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 id="insp-name" class="font-bold text-amber-400 text-xs">Cohort Inspection</h4>
+                        <span id="insp-level" class="text-[10px] px-2 py-0.5 bg-amber-500/10 text-amber-400 rounded border border-amber-500/30">Level I</span>
+                    </div>
+                    <div class="space-y-1 text-[11px] text-slate-300">
+                        <div class="flex justify-between"><span>Damage:</span> <span id="insp-dmg" class="font-bold">15</span></div>
+                        <div class="flex justify-between"><span>Range:</span> <span id="insp-range" class="font-bold">120</span></div>
+                        <div class="flex justify-between"><span>Kills:</span> <span id="insp-kills" class="font-bold">0</span></div>
+                    </div>
+                </div>
+                <div class="pt-3 border-t border-slate-800 flex space-x-2">
+                    <button onclick="upgradeSelectedTower()" class="flex-1 py-1.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold rounded-lg text-xs transition">Upgrade (75🪙)</button>
+                    <button onclick="sellSelectedTower()" class="px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900/60 text-rose-300 font-bold rounded-lg text-xs border border-rose-800/50 transition">Sell</button>
+                </div>
+            </div>
+
+            <!-- Codex Quick Tip -->
+            <div class="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800 text-[10px] text-slate-400">
+                <span class="text-amber-400 font-bold">Historical Note:</span> The Limes Germanicus was a fortified border defense system of the Roman Empire guarding against Germanic tribes like the Marcomanni and Alamanni.
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal: Victory / Defeat -->
+    <div id="gameover-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-md w-full p-6 shadow-2xl text-center space-y-4">
+            <div id="modal-icon" class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto text-3xl border border-amber-500/30">🦅</div>
+            <h3 id="modal-title" class="historical-title text-2xl font-bold text-amber-400">Frontier Secure</h3>
+            <p id="modal-desc" class="text-xs text-slate-300 leading-relaxed">The Germanic tribes have been repelled from the Limes.</p>
+            <div class="pt-3">
+                <button onclick="restartGame()" class="w-full py-3 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold rounded-xl text-sm transition shadow-lg">Reinforce Frontier</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game State
+        let gold = 250;
+        let castellumHP = 20;
+        let maxHP = 20;
+        let wave = 1;
+        let maxWaves = 10;
+        let gameState = 'prepare'; // prepare, wave, gameover, victory
+
+        let selectedTowerType = null; // 'auxiliary', 'ballista', 'scorpio'
+        let selectedTowerInstance = null;
+
+        // Path waypoints for enemy march across Roman frontier
+        const pathWaypoints = [
+            { x: 400, y: 0 },
+            { x: 400, y: 120 },
+            { x: 220, y: 120 },
+            { x: 220, y: 280 },
+            { x: 580, y: 280 },
+            { x: 580, y: 440 },
+            { x: 400, y: 440 },
+            { x: 400, y: 520 } // Castellum Gate
+        ];
+
+        // Grid buildable tile zones along path
+        const buildGrid = [];
+        for (let r = 0; r < 10; r++) {
+            for (let c = 0; c < 15; c++) {
+                let px = c * 53 + 26;
+                let py = r * 52 + 26;
+                // Check distance to path segments
+                let isPath = false;
+                for (let i = 0; i < pathWaypoints.length - 1; i++) {
+                    let p1 = pathWaypoints[i];
+                    let p2 = pathWaypoints[i+1];
+                    let dist = distToSegment({x: px, y: py}, p1, p2);
+                    if (dist < 32) isPath = true;
+                }
+                // Exclude castle zone at bottom center
+                if (px > 340 && px < 460 && py > 440) isPath = true;
+
+                if (!isPath) {
+                    buildGrid.push({ c, r, x: px, y: py, tower: null });
+                }
+            }
+        }
+
+        function distToSegment(p, p1, p2) {
+            let l2 = (p2.x - p1.x)*(p2.x - p1.x) + (p2.y - p1.y)*(p2.y - p1.y);
+            if (l2 === 0) return Math.hypot(p.x - p1.x, p.y - p1.y);
+            let t = ((p.x - p1.x)*(p2.x - p1.x) + (p.y - p1.y)*(p2.y - p1.y)) / l2;
+            t = Math.max(0, Math.min(1, t));
+            return Math.hypot(p.x - (p1.x + t * (p2.x - p1.x)), p.y - (p1.y + t * (p2.y - p1.y)));
+        }
+
+        let towers = [];
+        let enemies = [];
+        let projectiles = [];
+        let particles = [];
+        let damageTexts = [];
+
+        let waveSpawnTimer = 0;
+        let enemiesToSpawn = [];
+
+        const towerConfigs = {
+            auxiliary: { name: "Auxiliarii Cohort", cost: 100, range: 75, dmg: 12, speed: 45, color: '#3b82f6', splash: false },
+            ballista: { name: "Ballista Battery", cost: 175, range: 160, dmg: 45, speed: 120, color: '#eab308', splash: true },
+            scorpio: { name: "Scorpio Post", cost: 125, range: 130, dmg: 28, speed: 70, color: '#ec4899', splash: false }
+        };
+
+        const enemyTypes = {
+            scout: { name: "Germanic Scout", hp: 60, speed: 1.8, gold: 15, radius: 10, color: '#ef4444' },
+            raider: { name: "Marcomanni Raider", hp: 120, speed: 1.2, gold: 25, radius: 13, color: '#f97316' },
+            chieftain: { name: "Alamanni Chieftain", hp: 300, speed: 0.8, gold: 50, radius: 16, color: '#a855f7' }
+        };
+
+        // Initialize UI & Canvas click
+        window.onload = function() {
+            updateUI();
+            setupCanvasClick();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function setupCanvasClick() {
+            canvas.addEventListener('click', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+                const mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+                // Check if clicking existing tower
+                let clickedTower = towers.find(t => Math.hypot(t.x - mouseX, t.y - mouseY) < 25);
+                if (clickedTower) {
+                    selectedTowerInstance = clickedTower;
+                    showInspector(clickedTower);
+                    return;
+                }
+
+                // If placing a tower
+                if (selectedTowerType && gameState === 'prepare') {
+                    let tile = buildGrid.find(g => Math.hypot(g.x - mouseX, g.y - mouseY) < 26);
+                    if (tile && !tile.tower) {
+                        let config = towerConfigs[selectedTowerType];
+                        if (gold >= config.cost) {
+                            gold -= config.cost;
+                            let newTower = {
+                                type: selectedTowerType,
+                                name: config.name,
+                                x: tile.x,
+                                y: tile.y,
+                                range: config.range,
+                                dmg: config.dmg,
+                                speed: config.speed,
+                                cooldown: 0,
+                                level: 1,
+                                kills: 0,
+                                color: config.color,
+                                splash: config.splash,
+                                tile: tile
+                            };
+                            tile.tower = newTower;
+                            towers.push(newTower);
+                            addParticle(tile.x, tile.y, config.color, 15);
+                            updateUI();
+                        }
+                    }
+                } else {
+                    selectedTowerInstance = null;
+                    document.getElementById('inspector-panel').classList.add('hidden');
+                }
+            });
+        }
+
+        function selectTowerType(type) {
+            selectedTowerType = type;
+            ['auxiliary', 'ballista', 'scorpio'].forEach(t => {
+                const card = document.getElementById(`card-${t}`);
+                if (t === type) {
+                    card.className = "p-3 bg-amber-950/40 hover:bg-amber-900/40 rounded-xl border-2 border-amber-500 cursor-pointer transition group shadow-lg";
+                } else {
+                    card.className = "p-3 bg-slate-950/70 hover:bg-slate-800/80 rounded-xl border-2 border-slate-800 cursor-pointer transition group";
+                }
+            });
+        }
+
+        function showInspector(tower) {
+            selectedTowerInstance = tower;
+            const panel = document.getElementById('inspector-panel');
+            panel.classList.remove('hidden');
+            document.getElementById('insp-name').innerText = tower.name;
+            document.getElementById('insp-level').innerText = `Level ${tower.level}`;
+            document.getElementById('insp-dmg').innerText = tower.dmg;
+            document.getElementById('insp-range').innerText = tower.range;
+            document.getElementById('insp-kills').innerText = tower.kills;
+        }
+
+        function upgradeSelectedTower() {
+            if (!selectedTowerInstance) return;
+            let cost = 75 * selectedTowerInstance.level;
+            if (gold >= cost) {
+                gold -= cost;
+                selectedTowerInstance.level++;
+                selectedTowerInstance.dmg = Math.round(selectedTowerInstance.dmg * 1.4);
+                selectedTowerInstance.range = Math.round(selectedTowerInstance.range * 1.1);
+                updateUI();
+                showInspector(selectedTowerInstance);
+                addParticle(selectedTowerInstance.x, selectedTowerInstance.y, '#eab308', 25);
+            }
+        }
+
+        function sellSelectedTower() {
+            if (!selectedTowerInstance) return;
+            let refund = Math.round(towerConfigs[selectedTowerInstance.type].cost * 0.7);
+            gold += refund;
+            selectedTowerInstance.tile.tower = null;
+            towers = towers.filter(t => t !== selectedTowerInstance);
+            selectedTowerInstance = null;
+            document.getElementById('inspector-panel').classList.add('hidden');
+            updateUI();
+        }
+
+        function startWave() {
+            if (gameState !== 'prepare') return;
+            gameState = 'wave';
+            document.getElementById('ui-gamestate').innerText = `Phase: Wave ${wave} Active`;
+            document.getElementById('btn-start-wave').classList.add('opacity-50', 'pointer-events-none');
+
+            // Generate wave enemies
+            enemiesToSpawn = [];
+            let count = 5 + wave * 3;
+            for (let i = 0; i < count; i++) {
+                let type = 'scout';
+                if (wave >= 3 && i % 3 === 0) type = 'raider';
+                if (wave >= 6 && i % 5 === 0) type = 'chieftain';
+                enemiesToSpawn.push(type);
+            }
+            waveSpawnTimer = 0;
+        }
+
+        function spawnEnemy(typeKey) {
+            let data = enemyTypes[typeKey];
+            enemies.push({
+                type: typeKey,
+                name: data.name,
+                x: pathWaypoints[0].x,
+                y: pathWaypoints[0].y,
+                hp: data.hp * (1 + (wave - 1) * 0.15),
+                maxHp: data.hp * (1 + (wave - 1) * 0.15),
+                speed: data.speed,
+                gold: data.gold,
+                radius: data.radius,
+                color: data.color,
+                waypointIndex: 1,
+                distanceTravelled: 0
+            });
+        }
+
+        // Game Loop
+        let lastTime = 0;
+        function gameLoop(timestamp) {
+            let dt = (timestamp - lastTime) / 1000;
+            if (dt > 0.1) dt = 0.1;
+            lastTime = timestamp;
+
+            update(dt);
+            render();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update(dt) {
+            if (gameState === 'wave') {
+                // Spawn logic
+                if (enemiesToSpawn.length > 0) {
+                    waveSpawnTimer += dt;
+                    if (waveSpawnTimer > 0.8) {
+                        spawnEnemy(enemiesToSpawn.shift());
+                        waveSpawnTimer = 0;
+                    }
+                } else if (enemies.length === 0) {
+                    // Wave completed successfully
+                    gameState = 'prepare';
+                    gold += 50 + wave * 15;
+                    wave++;
+                    if (wave > maxWaves) {
+                        triggerVictory();
+                    } else {
+                        document.getElementById('ui-gamestate').innerText = `Phase: Prepare Defenses`;
+                        document.getElementById('btn-start-wave').classList.remove('opacity-50', 'pointer-events-none');
+                    }
+                    updateUI();
+                }
+            }
+
+            // Update Enemies
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                let en = enemies[i];
+                let targetWp = pathWaypoints[en.waypointIndex];
+                let angle = Math.atan2(targetWp.y - en.y, targetWp.x - en.x);
+                en.x += Math.cos(angle) * en.speed;
+                en.y += Math.sin(angle) * en.speed;
+                en.distanceTravelled += en.speed;
+
+                let dist = Math.hypot(targetWp.x - en.x, targetWp.y - en.y);
+                if (dist < 4) {
+                    en.waypointIndex++;
+                    if (en.waypointIndex >= pathWaypoints.length) {
+                        // Reached Castellum!
+                        castellumHP--;
+                        enemies.splice(i, 1);
+                        updateUI();
+                        addDamageText(400, 480, "-1 HP", '#ef4444');
+                        if (castellumHP <= 0) {
+                            triggerGameOver();
+                        }
+                        continue;
+                    }
+                }
+            }
+
+            // Update Towers & Firing
+            for (let tower of towers) {
+                if (tower.cooldown > 0) tower.cooldown--;
+
+                if (tower.cooldown <= 0) {
+                    // Find target in range
+                    let target = null;
+                    let minDist = Infinity;
+                    for (let en of enemies) {
+                        let d = Math.hypot(en.x - tower.x, en.y - tower.y);
+                        if (d <= tower.range && en.distanceTravelled > minDist) {
+                            // Target enemy furthest along path
+                            minDist = en.distanceTravelled;
+                            target = en;
+                        }
+                    }
+
+                    if (target) {
+                        tower.cooldown = tower.speed;
+                        // Fire projectile
+                        projectiles.push({
+                            x: tower.x,
+                            y: tower.y,
+                            targetX: target.x,
+                            targetY: target.y,
+                            targetEnemy: target,
+                            dmg: tower.dmg,
+                            speed: 8,
+                            color: tower.color,
+                            splash: tower.splash,
+                            tower: tower
+                        });
+                    }
+                }
+            }
+
+            // Update Projectiles
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                let p = projectiles[i];
+                let tx = p.targetEnemy ? p.targetEnemy.x : p.targetX;
+                let ty = p.targetEnemy ? p.targetEnemy.y : p.targetY;
+
+                let angle = Math.atan2(ty - p.y, tx - p.x);
+                p.x += Math.cos(angle) * p.speed;
+                p.y += Math.sin(angle) * p.speed;
+
+                if (Math.hypot(tx - p.x, ty - p.y) < 10) {
+                    // Hit!
+                    if (p.splash) {
+                        // Splash damage
+                        for (let en of enemies) {
+                            if (Math.hypot(en.x - p.x, en.y - p.y) < 60) {
+                                en.hp -= p.dmg;
+                                checkEnemyDeath(en, p.tower);
+                            }
+                        }
+                        addParticle(p.x, p.y, '#f97316', 25);
+                    } else if (p.targetEnemy) {
+                        p.targetEnemy.hp -= p.dmg;
+                        checkEnemyDeath(p.targetEnemy, p.tower);
+                        addParticle(p.x, p.y, p.color, 8);
+                    }
+                    addDamageText(p.x, p.y, `-${p.dmg}`, p.color);
+                    projectiles.splice(i, 1);
+                }
+            }
+
+            // Update Particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let pt = particles[i];
+                pt.x += pt.vx;
+                pt.y += pt.vy;
+                pt.life--;
+                if (pt.life <= 0) particles.splice(i, 1);
+            }
+
+            // Update Floating Damage Texts
+            for (let i = damageTexts.length - 1; i >= 0; i--) {
+                let dt = damageTexts[i];
+                dt.y -= 0.6;
+                dt.life--;
+                if (dt.life <= 0) damageTexts.splice(i, 1);
+            }
+        }
+
+        function checkEnemyDeath(en, tower) {
+            if (en.hp <= 0) {
+                gold += en.gold;
+                if (tower) tower.kills++;
+                let idx = enemies.indexOf(en);
+                if (idx !== -1) enemies.splice(idx, 1);
+                addParticle(en.x, en.y, '#eab308', 20);
+                updateUI();
+            }
+        }
+
+        function addParticle(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                let angle = Math.random() * Math.PI * 2;
+                let speed = Math.random() * 3 + 1;
+                particles.push({
+                    x, y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    color,
+                    life: 25
+                });
+            }
+        }
+
+        function addDamageText(x, y, text, color) {
+            damageTexts.push({ x, y, text, color, life: 30 });
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Terrain & Grass background
+            ctx.fillStyle = '#22301c';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Subtle grid texture
+            ctx.strokeStyle = '#2b3b24';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < canvas.width; x += 53) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += 52) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+            }
+
+            // 2. Road Network / Limes Path
+            ctx.strokeStyle = '#523d2e';
+            ctx.lineWidth = 36;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.moveTo(pathWaypoints[0].x, pathWaypoints[0].y);
+            for (let i = 1; i < pathWaypoints.length; i++) {
+                ctx.lineTo(pathWaypoints[i].x, pathWaypoints[i].y);
+            }
+            ctx.stroke();
+
+            // Inner cobblestone road line
+            ctx.strokeStyle = '#735742';
+            ctx.lineWidth = 26;
+            ctx.stroke();
+
+            // 3. Castellum Outpost at the bottom
+            ctx.fillStyle = '#64748b';
+            ctx.fillRect(340, 460, 120, 60);
+            ctx.fillStyle = '#475569';
+            ctx.fillRect(350, 470, 100, 50);
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(390, 480, 20, 25); // Gate
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = 'bold 11px Cinzel, serif';
+            ctx.fillText("CASTELLUM", 357, 503);
+
+            // 4. Build Grid Sockets (when tower selected in prepare phase)
+            if (selectedTowerType && gameState === 'prepare') {
+                for (let tile of buildGrid) {
+                    if (!tile.tower) {
+                        ctx.fillStyle = 'rgba(234, 179, 8, 0.25)';
+                        ctx.beginPath();
+                        ctx.arc(tile.x, tile.y, 18, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.strokeStyle = 'rgba(234, 179, 8, 0.6)';
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // 5. Render Towers
+            for (let tower of towers) {
+                // Base platform
+                ctx.fillStyle = '#334155';
+                ctx.beginPath();
+                ctx.arc(tower.x, tower.y, 22, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = tower.color;
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Tower icon / symbol
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = '16px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                let icon = '🛡️';
+                if (tower.type === 'ballista') icon = '🎯';
+                if (tower.type === 'scorpio') icon = '🏹';
+                ctx.fillText(icon, tower.x, tower.y);
+
+                // Range circle if selected
+                if (tower === selectedTowerInstance) {
+                    ctx.strokeStyle = 'rgba(234, 179, 8, 0.5)';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(tower.x, tower.y, tower.range, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            }
+
+            // 6. Render Enemies
+            for (let en of enemies) {
+                ctx.fillStyle = en.color;
+                ctx.beginPath();
+                ctx.arc(en.x, en.y, en.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#1e293b';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // HP Bar
+                let barW = 24;
+                let hpRatio = Math.max(0, en.hp / en.maxHp);
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(en.x - barW/2, en.y - en.radius - 10, barW, 4);
+                ctx.fillStyle = '#22c55e';
+                ctx.fillRect(en.x - barW/2, en.y - en.radius - 10, barW * hpRatio, 4);
+            }
+
+            // 7. Render Projectiles
+            for (let p of projectiles) {
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 8. Render Particles
+            for (let pt of particles) {
+                ctx.fillStyle = pt.color;
+                ctx.fillRect(pt.x, pt.y, 3, 3);
+            }
+
+            // 9. Render Floating Damage Texts
+            for (let dt of damageTexts) {
+                ctx.fillStyle = dt.color;
+                ctx.font = 'bold 12px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(dt.text, dt.x, dt.y);
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('ui-gold').innerText = gold;
+            document.getElementById('ui-hp').innerText = `${castellumHP} / ${maxHP}`;
+            document.getElementById('ui-wave').innerText = `${wave} / ${maxWaves}`;
+        }
+
+        function triggerGameOver() {
+            gameState = 'gameover';
+            document.getElementById('modal-title').innerText = "Frontier Overrun";
+            document.getElementById('modal-desc').innerText = "The Germanic tribes breached the Limes and sacked the Castellum outpost.";
+            document.getElementById('modal-icon').innerText = "🔥";
+            document.getElementById('gameover-modal').classList.remove('hidden');
+        }
+
+        function triggerVictory() {
+            gameState = 'victory';
+            document.getElementById('modal-title').innerText = "Pax Romana Preserved";
+            document.getElementById('modal-desc').innerText = "You successfully defended the Limes Germanicus against all barbarian incursions!";
+            document.getElementById('modal-icon').innerText = "🦅";
+            document.getElementById('gameover-modal').classList.remove('hidden');
+        }
+
+        function restartGame() {
+            gold = 250;
+            castellumHP = 20;
+            wave = 1;
+            gameState = 'prepare';
+            towers = [];
+            enemies = [];
+            projectiles = [];
+            particles = [];
+            damageTexts = [];
+            selectedTowerInstance = null;
+            for (let tile of buildGrid) tile.tower = null;
+            document.getElementById('gameover-modal').classList.add('hidden');
+            document.getElementById('ui-gamestate').innerText = `Phase: Prepare Defenses`;
+            document.getElementById('btn-start-wave').classList.remove('opacity-50', 'pointer-events-none');
+            document.getElementById('inspector-panel').classList.add('hidden');
+            updateUI();
+        }
+    </script>
+</body>
+</html>
