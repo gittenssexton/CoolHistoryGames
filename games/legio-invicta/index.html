@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legio Invicta: Stick War</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .historical-title { font-family: 'Cinzel', serif; }
+        canvas { touch-action: none; background: #2f3e2e; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #1a2318; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #4a5d43; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-full flex flex-col selection:bg-amber-500 selection:text-slate-950 overflow-hidden">
+
+    <!-- Header -->
+    <header class="bg-slate-900 border-b border-amber-900/40 py-3 px-6 shadow-xl flex-shrink-0 relative z-20">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="bg-amber-600 p-2 rounded-xl shadow-inner border border-amber-500/30">
+                    <svg class="w-6 h-6 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="historical-title text-xl sm:text-2xl font-black text-amber-500 tracking-wider">Legio Invicta: Stick War</h1>
+                    <p class="text-[11px] text-slate-400 font-medium uppercase tracking-wide">Roman Limes Frontier Campaign • Side-Scrolling Strategy</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-4 bg-slate-950/70 px-4 py-2 rounded-xl border border-slate-800 text-xs">
+                <div><span class="text-slate-400">Denarii:</span> <span id="ui-denarii" class="font-bold text-amber-400">150 🪙</span></div>
+                <div class="h-4 w-px bg-slate-800"></div>
+                <div><span class="text-slate-400">Wave:</span> <span id="ui-wave" class="font-bold text-emerald-400">1 / 5</span></div>
+                <div class="h-4 w-px bg-slate-800"></div>
+                <div><span class="text-slate-400">Formation:</span> <span id="ui-formation" class="font-bold text-cyan-400">Line</span></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 grid grid-cols-1 lg:grid-cols-4 gap-4 overflow-hidden">
+        
+        <!-- Canvas & Recruitment Bar (Span 3) -->
+        <div class="lg:col-span-3 bg-slate-900 rounded-2xl p-4 border border-slate-800 shadow-2xl flex flex-col items-center justify-between relative overflow-hidden">
+            
+            <!-- Canvas Container -->
+            <div class="relative w-full flex-1 flex items-center justify-center overflow-hidden min-h-[360px]">
+                <canvas id="gameCanvas" width="768" height="380" class="rounded-xl border-2 border-slate-800 shadow-inner max-w-full max-h-full"></canvas>
+            </div>
+
+            <!-- Recruitment Deck & Tactics Control Bar -->
+            <div class="w-full mt-3 grid grid-cols-2 sm:grid-cols-5 gap-2">
+                <button onclick="recruitUnit('servus')" class="p-2 bg-slate-950 hover:bg-slate-800 rounded-xl border border-slate-800 hover:border-amber-500 transition text-left group">
+                    <div class="flex justify-between items-center text-xs font-bold text-slate-200">
+                        <span>⛏️ Servus</span>
+                        <span class="text-amber-400">50 🪙</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Gathers Denarii</p>
+                </button>
+                <button onclick="recruitUnit('hastatus')" class="p-2 bg-slate-950 hover:bg-slate-800 rounded-xl border border-slate-800 hover:border-amber-500 transition text-left group">
+                    <div class="flex justify-between items-center text-xs font-bold text-slate-200">
+                        <span>🛡️ Hastatus</span>
+                        <span class="text-amber-400">75 🪙</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Melee Infantry</p>
+                </button>
+                <button onclick="recruitUnit('princeps')" class="p-2 bg-slate-950 hover:bg-slate-800 rounded-xl border border-slate-800 hover:border-amber-500 transition text-left group">
+                    <div class="flex justify-between items-center text-xs font-bold text-slate-200">
+                        <span>⚔️ Princeps</span>
+                        <span class="text-amber-400">120 🪙</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Heavy Swordsman</p>
+                </button>
+                <button onclick="recruitUnit('ballista')" class="p-2 bg-slate-950 hover:bg-slate-800 rounded-xl border border-slate-800 hover:border-amber-500 transition text-left group">
+                    <div class="flex justify-between items-center text-xs font-bold text-slate-200">
+                        <span>🏹 Ballista</span>
+                        <span class="text-amber-400">200 🪙</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Siege Artillery</p>
+                </button>
+                <button onclick="toggleFormation()" class="p-2 bg-amber-950/60 hover:bg-amber-900/60 rounded-xl border border-amber-800/80 transition text-center col-span-2 sm:col-span-1 flex flex-col justify-center">
+                    <div class="text-xs font-bold text-amber-300">Testudo Form</div>
+                    <p id="ui-formation-status" class="text-[10px] text-slate-400">Toggle Defense</p>
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Control Panel: Directives & Event Log (Span 1) -->
+        <div class="bg-slate-900 rounded-2xl p-4 border border-slate-800 shadow-xl flex flex-col space-y-4 overflow-y-auto">
+            
+            <!-- Command Directives -->
+            <div class="space-y-2">
+                <h3 class="historical-title text-xs font-bold text-amber-400 uppercase">Legate Directives</h3>
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="setOrder('advance')" id="btn-advance" class="p-2 bg-slate-950 hover:bg-slate-800 border border-amber-500 text-amber-400 font-bold text-xs rounded-lg transition text-center">Advance</button>
+                    <button onclick="setOrder('hold')" id="btn-hold" class="p-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold text-xs rounded-lg transition text-center">Hold</button>
+                    <button onclick="setOrder('retreat')" id="btn-retreat" class="p-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold text-xs rounded-lg transition text-center">Retreat</button>
+                </div>
+            </div>
+
+            <!-- Chronicle Log -->
+            <div class="flex-1 flex flex-col min-h-[220px]">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-2">
+                    <h3 class="historical-title text-xs font-bold text-slate-300">Frontier Campaign Log</h3>
+                </div>
+                <div id="action-log" class="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-1 text-[11px]">
+                    <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-800/80 text-slate-300">
+                        <span class="text-amber-400 font-bold">Garrison Ready:</span> Defend the Roman castellum against Germanic tribal raids.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal: Game Over / Victory -->
+    <div id="gameover-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-md w-full p-6 shadow-2xl text-center space-y-4">
+            <div id="modal-icon" class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto text-3xl border border-amber-500/30">🏛️</div>
+            <h3 id="modal-title" class="historical-title text-2xl font-bold text-amber-400">Frontier Secured</h3>
+            <p id="modal-desc" class="text-xs text-slate-300 leading-relaxed">The Limes Germanicus stands firm.</p>
+            <div class="pt-3">
+                <button onclick="restartGame()" class="w-full py-3 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold rounded-xl text-sm transition shadow-lg">New Campaign</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game State
+        let denarii = 175;
+        let wave = 1;
+        let maxWaves = 5;
+        let order = 'advance'; // 'advance', 'hold', 'retreat'
+        let testudoActive = false;
+
+        let playerBase = { x: 50, hp: 1000, maxHp: 1000 };
+        let enemyBase = { x: 718, hp: 1000, maxHp: 1000 };
+
+        let units = [];
+        let enemies = [];
+        let projectiles = [];
+        let gameTimer = 0;
+
+        window.onload = function() {
+            updateUI();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function setOrder(newOrder) {
+            order = newOrder;
+            ['advance', 'hold', 'retreat'].forEach(o => {
+                const btn = document.getElementById(`btn-${o}`);
+                if (o === newOrder) {
+                    btn.className = "p-2 bg-slate-950 hover:bg-slate-800 border border-amber-500 text-amber-400 font-bold text-xs rounded-lg transition text-center";
+                } else {
+                    btn.className = "p-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold text-xs rounded-lg transition text-center";
+                }
+            });
+            addLog(`Legate issued order: ${newOrder.toUpperCase()}`, 'Tactics');
+        }
+
+        function toggleFormation() {
+            testudoActive = !testudoActive;
+            document.getElementById('ui-formation-status').innerText = testudoActive ? "Active (+Def)" : "Toggle Defense";
+            document.getElementById('ui-formation').innerText = testudoActive ? "Testudo" : "Line";
+            addLog(testudoActive ? "Legion formed Testudo tortoise shield wall!" : "Legion broke formation into standard line.", 'Formation');
+        }
+
+        function recruitUnit(type) {
+            const costs = { servus: 50, hastatus: 75, princeps: 120, ballista: 200 };
+            const cost = costs[type];
+            if (denarii >= cost) {
+                denarii -= cost;
+                units.push({
+                    type: type,
+                    x: playerBase.x + 40,
+                    y: 280 + Math.random() * 40,
+                    hp: type === 'servus' ? 60 : (type === 'hastatus' ? 120 : (type === 'princeps' ? 220 : 150)),
+                    maxHp: type === 'servus' ? 60 : (type === 'hastatus' ? 120 : (type === 'princeps' ? 220 : 150)),
+                    atk: type === 'servus' ? 2 : (type === 'hastatus' ? 14 : (type === 'princeps' ? 24 : 35)),
+                    range: type === 'ballista' ? 220 : (type === 'servus' ? 20 : 35),
+                    speed: type === 'servus' ? 1.5 : 1.1,
+                    cooldown: 0
+                });
+                updateUI();
+                addLog(`Recruited Roman ${type.toUpperCase()}.`, 'Recruitment');
+            } else {
+                addLog(`Not enough Denarii to recruit ${type}!`, 'Warning');
+            }
+        }
+
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update() {
+            gameTimer++;
+
+            // Passive Denarii income from Servus / time
+            if (gameTimer % 90 === 0) {
+                denarii += 15 + units.filter(u => u.type === 'servus').length * 10;
+                updateUI();
+            }
+
+            // Spawn Waves of Germanic Raiders
+            if (enemies.length === 0 && wave <= maxWaves && gameTimer % 180 === 0) {
+                spawnWave();
+            }
+
+            // Update Player Units
+            for (let i = units.length - 1; i >= 0; i--) {
+                let u = units[i];
+                u.cooldown = Math.max(0, u.cooldown - 1);
+
+                // Find closest enemy in range
+                let targetEnemy = null;
+                let minDist = Infinity;
+                for (let e of enemies) {
+                    let d = Math.abs(e.x - u.x);
+                    if (d < minDist) {
+                        minDist = d;
+                        targetEnemy = e;
+                    }
+                }
+
+                if (targetEnemy && minDist <= u.range) {
+                    if (u.cooldown === 0) {
+                        u.cooldown = 40;
+                        targetEnemy.hp -= u.atk;
+                        if (targetEnemy.hp <= 0) {
+                            let eIdx = enemies.indexOf(targetEnemy);
+                            if (eIdx !== -1) enemies.splice(eIdx, 1);
+                            denarii += 25;
+                            updateUI();
+                        }
+                    }
+                } else if (Math.abs(enemyBase.x - u.x) <= u.range) {
+                    if (u.cooldown === 0) {
+                        u.cooldown = 40;
+                        enemyBase.hp -= u.atk;
+                        if (enemyBase.hp <= 0) {
+                            triggerGameOver(true);
+                        }
+                    }
+                } else {
+                    // Movement based on order
+                    if (order === 'advance') u.x += u.speed;
+                    else if (order === 'retreat' && u.x > playerBase.x + 30) u.x -= u.speed;
+                    // hold stays put unless enemy is close
+                }
+            }
+
+            // Update Enemy Raiders
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                let e = enemies[i];
+                e.cooldown = Math.max(0, e.cooldown - 1);
+
+                let targetUnit = null;
+                let minDist = Infinity;
+                for (let u of units) {
+                    let d = Math.abs(u.x - e.x);
+                    if (d < minDist) {
+                        minDist = d;
+                        targetUnit = u;
+                    }
+                }
+
+                if (targetUnit && minDist <= e.range) {
+                    if (e.cooldown === 0) {
+                        e.cooldown = 50;
+                        let mitigation = testudoActive ? 0.6 : 1.0;
+                        targetUnit.hp -= Math.round(e.atk * mitigation);
+                        if (targetUnit.hp <= 0) {
+                            let uIdx = units.indexOf(targetUnit);
+                            if (uIdx !== -1) units.splice(uIdx, 1);
+                        }
+                    }
+                } else if (Math.abs(playerBase.x - e.x) <= e.range) {
+                    if (e.cooldown === 0) {
+                        e.cooldown = 50;
+                        playerBase.hp -= e.atk;
+                        if (playerBase.hp <= 0) {
+                            triggerGameOver(false);
+                        }
+                    }
+                } else {
+                    e.x -= e.speed;
+                }
+            }
+        }
+
+        function spawnWave() {
+            let count = 4 + wave * 3;
+            for (let i = 0; i < count; i++) {
+                enemies.push({
+                    x: enemyBase.x - i * 35 - Math.random() * 20,
+                    y: 280 + Math.random() * 40,
+                    hp: 80 + wave * 25,
+                    maxHp: 80 + wave * 25,
+                    atk: 12 + wave * 3,
+                    range: 30,
+                    speed: 0.9 + Math.random() * 0.3,
+                    cooldown: 0
+                });
+            }
+            addLog(`Wave ${wave} of Germanic tribal raiders sighted!`, 'Combat');
+            wave++;
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Terrain & Sky
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#3f6212'; // ground
+            ctx.fillRect(0, 320, canvas.width, 60);
+
+            // Bases (Castellum & Tribal Camp)
+            ctx.fillStyle = '#475569';
+            ctx.fillRect(playerBase.x - 20, 220, 50, 100);
+            ctx.fillStyle = '#f59e0b';
+            ctx.font = 'bold 10px Cinzel, serif';
+            ctx.fillText("CASTELLUM", playerBase.x - 22, 210);
+
+            ctx.fillStyle = '#78716c';
+            ctx.fillRect(enemyBase.x - 30, 220, 50, 100);
+            ctx.fillStyle = '#ef4444';
+            ctx.fillText("TRIBAL CAMP", enemyBase.x - 32, 210);
+
+            // Draw Units (Roman Stickmen)
+            for (let u of units) {
+                ctx.fillStyle = '#3b82f6';
+                ctx.beginPath();
+                ctx.arc(u.x, u.y - 18, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#3b82f6';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(u.x, u.y - 12);
+                ctx.lineTo(u.x, u.y);
+                ctx.moveTo(u.x - 6, u.y - 8);
+                ctx.lineTo(u.x + 6, u.y - 8);
+                ctx.moveTo(u.x, u.y);
+                ctx.lineTo(u.x - 5, u.y + 12);
+                ctx.moveTo(u.x, u.y);
+                ctx.lineTo(u.x + 5, u.y + 12);
+                ctx.stroke();
+            }
+
+            // Draw Enemies (Germanic Raiders)
+            for (let e of enemies) {
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.arc(e.x, e.y - 18, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#ef4444';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(e.x, e.y - 12);
+                ctx.lineTo(e.x, e.y);
+                ctx.moveTo(e.x - 6, e.y - 8);
+                ctx.lineTo(e.x + 6, e.y - 8);
+                ctx.moveTo(e.x, e.y);
+                ctx.lineTo(e.x - 5, e.y + 12);
+                ctx.moveTo(e.x, e.y);
+                ctx.lineTo(e.x + 5, e.y + 12);
+                ctx.stroke();
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('ui-denarii').innerText = `${denarii} 🪙`;
+            document.getElementById('ui-wave').innerText = `${Math.min(wave, maxWaves)} / ${maxWaves}`;
+        }
+
+        function addLog(text, title) {
+            const logContainer = document.getElementById('action-log');
+            const item = document.createElement('div');
+            item.className = "bg-slate-950/60 p-2 rounded-lg border border-slate-800/80 text-slate-300";
+            item.innerHTML = `<span class="text-amber-400 font-bold">${title}:</span> ${text}`;
+            logContainer.prepend(item);
+        }
+
+        function triggerGameOver(isVictory) {
+            document.getElementById('modal-title').innerText = isVictory ? "Pax Romana Maintained" : "Castellum Overrun";
+            document.getElementById('modal-desc').innerText = isVictory ? "You successfully repelled all Germanic tribal waves!" : "The tribal coalition breached the Roman frontier walls.";
+            document.getElementById('modal-icon').innerText = isVictory ? "👑" : "⚔️";
+            document.getElementById('gameover-modal').classList.remove('hidden');
+        }
+
+        function restartGame() {
+            denarii = 175;
+            wave = 1;
+            units = [];
+            enemies = [];
+            playerBase.hp = 1000;
+            enemyBase.hp = 1000;
+            document.getElementById('gameover-modal').classList.add('hidden');
+            document.getElementById('action-log').innerHTML = `<div class="bg-slate-950/60 p-2 rounded-lg border border-slate-800/80 text-slate-300"><span class="text-amber-400 font-bold">New Campaign:</span> Frontier re-established.</div>`;
+            updateUI();
+        }
+    </script>
+</body>
+</html>
