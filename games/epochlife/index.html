@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EpochLife: Chronicles - Historical Life Simulator</title>
+    <style>
+        :root {
+            --bg-color: #121214;
+            --panel-bg: #1c1c21;
+            --border-color: #33333d;
+            --text-main: #e4e4e7;
+            --text-muted: #94a3b8;
+            --accent-gold: #d97706;
+            --accent-gold-hover: #b45309;
+            --accent-blue: #3b82f6;
+            --accent-red: #ef4444;
+            --accent-green: #22c55e;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 700px;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: #18181b;
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0 0 5px 0;
+            font-size: 1.8rem;
+            letter-spacing: 1px;
+            color: var(--accent-gold);
+            font-family: serif;
+        }
+
+        header p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .screen {
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Character Creation / Era Selection */
+        .era-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .era-card {
+            background: #27272a;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+        }
+
+        .era-card:hover {
+            border-color: var(--accent-gold);
+            background: #2d2d33;
+        }
+
+        .era-card.selected {
+            border-color: var(--accent-gold);
+            background: #3f3f46;
+        }
+
+        .era-card h3 {
+            margin: 0 0 5px 0;
+            color: var(--accent-gold);
+            font-size: 1.1rem;
+        }
+
+        .era-card p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.3;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--text-muted);
+        }
+
+        input[type="text"] {
+            background: #121214;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px;
+            color: var(--text-main);
+            font-size: 1rem;
+        }
+
+        .btn {
+            background: var(--accent-gold);
+            color: #fff;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-align: center;
+        }
+
+        .btn:hover {
+            background: var(--accent-gold-hover);
+        }
+
+        /* Gameplay Dashboard */
+        .stats-dashboard {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            background: #121214;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-box {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-top: 2px;
+        }
+
+        .bio-panel {
+            background: #27272a;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .bio-info h2 {
+            margin: 0 0 4px 0;
+            font-size: 1.2rem;
+        }
+
+        .bio-info p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .age-badge {
+            background: var(--accent-gold);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .event-log {
+            background: #121214;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 100px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            color: var(--text-muted);
+        }
+
+        .event-log p {
+            margin: 0 0 8px 0;
+        }
+
+        .event-log p:last-child {
+            margin-bottom: 0;
+            color: var(--text-main);
+        }
+
+        .choices-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .choice-btn {
+            background: #27272a;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px 15px;
+            text-align: left;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .choice-btn:hover {
+            background: #3f3f46;
+            border-color: var(--accent-gold);
+        }
+
+        /* Epitaph Screen */
+        .epitaph-card {
+            background: #18181b;
+            border: 2px solid var(--accent-gold);
+            border-radius: 10px;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .epitaph-card h2 {
+            font-family: serif;
+            color: var(--accent-gold);
+            margin-top: 0;
+        }
+
+        .epitaph-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+            text-align: left;
+            background: #121214;
+            padding: 15px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>EPOCHLIFE: CHRONICLES</h1>
+        <p>A Historical Life Simulation Game</p>
+    </header>
+
+    <!-- SETUP SCREEN -->
+    <div id="setup-screen" class="screen">
+        <h3>Select Historical Era</h3>
+        <div class="era-grid">
+            <div class="era-card selected" onclick="selectEra('rome', this)">
+                <h3>Roman Republic</h3>
+                <p>150 BCE • Patricians, legions, political intrigue, and grain doles.</p>
+            </div>
+            <div class="era-card" onclick="selectEra('medieval', this)">
+                <h3>High Middle Ages</h3>
+                <p>1250 CE • Feudal fiefdoms, guild apprenticeships, plagues, and crusades.</p>
+            </div>
+            <div class="era-card" onclick="selectEra('renaissance', this)">
+                <h3>Renaissance Italy</h3>
+                <p>1500 CE • Patronage, banking, printing presses, and scientific inquiry.</p>
+            </div>
+            <div class="era-card" onclick="selectEra('enlightenment', this)">
+                <h3>Enlightenment Europe</h3>
+                <p>1750 CE • Salons, industrial shifts, philosophy, and revolutions.</p>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="char-name">Character Name</label>
+            <input type="text" id="char-name" value="Marcus Aurelius Minor" placeholder="Enter name...">
+        </div>
+
+        <button class="btn" onclick="startLife()">Begin Life Journey</button>
+    </div>
+
+    <!-- GAMEPLAY SCREEN -->
+    <div id="game-screen" class="screen hidden">
+        <div class="stats-dashboard">
+            <div class="stat-box">
+                <div class="stat-label">Health</div>
+                <div class="stat-value" id="stat-health" style="color: var(--accent-green);">100%</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Wealth</div>
+                <div class="stat-value" id="stat-wealth" style="color: var(--accent-gold);">$500</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Happiness</div>
+                <div class="stat-value" id="stat-happiness" style="color: var(--accent-blue);">75%</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Fame</div>
+                <div class="stat-value" id="stat-fame">10%</div>
+            </div>
+        </div>
+
+        <div class="bio-panel">
+            <div class="bio-info">
+                <h2 id="display-name">Marcus</h2>
+                <p id="display-era">Roman Republic • Born 150 BCE</p>
+            </div>
+            <div class="age-badge" id="display-age">Age: 0</div>
+        </div>
+
+        <div class="event-log" id="event-log">
+            <p>You were born into the world. Your journey through history begins.</p>
+        </div>
+
+        <div class="choices-container" id="choices-container">
+            <!-- Dynamically populated choices -->
+        </div>
+    </div>
+
+    <!-- EPITAPH SCREEN -->
+    <div id="epitaph-screen" class="screen hidden">
+        <div class="epitaph-card">
+            <h2>IN MEMORIAM</h2>
+            <p id="epitaph-name" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 5px;"></p>
+            <p id="epitaph-dates" style="color: var(--text-muted); font-size: 0.9rem;"></p>
+            
+            <p id="epitaph-cause" style="margin: 20px 0; font-style: italic; font-size: 1.05rem;"></p>
+
+            <div class="epitaph-stats">
+                <div><strong>Final Age:</strong> <span id="final-age">0</span></div>
+                <div><strong>Net Worth:</strong> <span id="final-wealth">$0</span></div>
+                <div><strong>Legacy Fame:</strong> <span id="final-fame">0%</span></div>
+                <div><strong>Era:</strong> <span id="final-era">Rome</span></div>
+            </div>
+
+            <button class="btn" onclick="resetGame()">Start New Life</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let game = {
+        era: 'rome',
+        name: '',
+        age: 0,
+        birthYear: 150,
+        health: 100,
+        wealth: 500,
+        happiness: 75,
+        fame: 10,
+        eventsLog: []
+    };
+
+    const eraData = {
+        rome: { name: 'Roman Republic', startYear: 150, currency: 'Denarii', symbol: '🪙' },
+        medieval: { name: 'High Middle Ages', startYear: 1250, currency: 'Groats', symbol: '🛡️' },
+        renaissance: { name: 'Renaissance Italy', startYear: 1500, currency: 'Florins', symbol: '⚜️' },
+        enlightenment: { name: 'Enlightenment Europe', startYear: 1750, currency: 'Livres', symbol: '📜' }
+    };
+
+    function selectEra(eraKey, element) {
+        document.querySelectorAll('.era-card').forEach(card => card.classList.remove('selected'));
+        element.classList.add('selected');
+        game.era = eraKey;
+    }
+
+    function startLife() {
+        const nameInput = document.getElementById('char-name').value.trim();
+        game.name = nameInput !== '' ? nameInput : 'Marcus Aurelius';
+        game.age = 0;
+        game.birthYear = eraData[game.era].startYear;
+        game.health = 100;
+        game.wealth = game.era === 'rome' ? 500 : 200;
+        game.happiness = 80;
+        game.fame = 5;
+        game.eventsLog = [`You were born in ${eraData[game.era].name} (${game.birthYear} CE/BCE).`];
+
+        document.getElementById('setup-screen').classList.add('hidden');
+        document.getElementById('game-screen').classList.remove('hidden');
+
+        updateDisplay();
+        generateYearEvents();
+    }
+
+    function updateDisplay() {
+        document.getElementById('stat-health').innerText = game.health + '%';
+        document.getElementById('stat-wealth').innerText = eraData[game.era].symbol + ' ' + game.wealth;
+        document.getElementById('stat-happiness').innerText = game.happiness + '%';
+        document.getElementById('stat-fame').innerText = game.fame + '%';
+
+        document.getElementById('display-name').innerText = game.name;
+        document.getElementById('display-era').innerText = `${eraData[game.era].name} • Year ${game.birthYear + game.age}`;
+        document.getElementById('display-age').innerText = `Age: ${game.age}`;
+
+        const logContainer = document.getElementById('event-log');
+        logContainer.innerHTML = game.eventsLog.map(e => `<p>${e}</p>`).join('');
+        logContainer.scrollTop = logContainer.scrollHeight;
+    }
+
+    function generateYearEvents() {
+        if (game.health <= 0) {
+            triggerDeath(" succumbed to illness and physical decline.");
+            return;
+        }
+
+        let eventText = "";
+        let choices = [];
+
+        if (game.age === 0) {
+            eventText = "You are an infant swaddled in cloth, under the watchful eye of your family.";
+            choices = [
+                { text: "Cry out for attention", effect: { happiness: 5 }, nextText: "Your mother cradled you closely, soothing your cries." },
+                { text: "Sleep peacefully", effect: { health: 2 }, nextText: "You rested quietly, strengthening your constitution." }
+            ];
+        } else if (game.age < 6) {
+            eventText = `At age ${game.age}, you explore the homestead and learn basic speech and customs.`;
+            choices = [
+                { text: "Play games in the dirt with neighborhood children", effect: { happiness: 10, health: -2 }, nextText: "You scraped your knees but made fast friends." },
+                { text: "Observe adult artisans and elders at work", effect: { fame: 2, happiness: 2 }, nextText: "You absorbed the sights and skills of your elders." }
+            ];
+        } else if (game.age === 6) {
+            eventText = "You reach school age. Education and mentorship shape your formative path.";
+            choices = [
+                { text: "Enter formal apprenticeship / tutoring", effect: { wealth: -50, fame: 5, happiness: -5 }, nextText: "Your rigorous studies gained the respect of local teachers." },
+                { text: "Work odd jobs to support the household", effect: { wealth: 100, health: -5, happiness: -10 }, nextText: "Backbreaking labor earned coin but tired your young limbs." }
+            ];
+        } else if (game.age === 14) {
+            eventText = "You enter youth. Society expects you to carve out your societal standing.";
+            choices = [
+                { text: "Pursue military service or guild training", effect: { fame: 15, wealth: 150, health: -10 }, nextText: "You undertook strenuous drills and rigorous field training." },
+                { text: "Pursue trade, commerce, and market ventures", effect: { wealth: 300, happiness: 5 }, nextText: "You mastered the ledger and turned a tidy profit at the market." }
+            ];
+        } else {
+            // Randomized adult events
+            const randomEvents = [
+                {
+                    text: "A lucrative commercial opportunity arises in the regional market.",
+                    choices: [
+                        { text: "Invest heavily in trade goods", effect: { wealth: 250, happiness: 10 }, nextText: "Your venture paid off handsomely, increasing your estate." },
+                        { text: "Pass on the risk and save your coin", effect: { wealth: 50 }, nextText: "You kept your wealth safe in reserve." }
+                    ]
+                },
+                {
+                    text: "A contagious fever sweeps through the district.",
+                    choices: [
+                        { text: "Consult a local physician and rest", effect: { health: -10, wealth: -100 }, nextText: "The apothecary's remedies saved you, though your purse is lighter." },
+                        { text: "Rely on natural resilience", effect: { health: -25, happiness: -10 }, nextText: "You suffered through days of fever before finally recovering." }
+                    ]
+                },
+                {
+                    text: "You are invited to join a prominent civic or social council.",
+                    choices: [
+                        { text: "Accept and campaign actively", effect: { fame: 20, wealth: -150, happiness: 10 }, nextText: "You secured a seat of honor among local notables." },
+                        { text: "Decline and maintain a quiet life", effect: { happiness: 5, wealth: 50 }, nextText: "You enjoyed peace and quiet away from public squabbles." }
+                    ]
+                }
+            ];
+
+            const ev = randomEvents[Math.floor(Math.random() * randomEvents.length)];
+            eventText = ev.text;
+            choices = ev.choices;
+        }
+
+        renderChoices(eventText, choices);
+    }
+
+    function renderChoices(eventText, choices) {
+        game.eventsLog.push(`<strong>Age ${game.age}:</strong> ${eventText}`);
+        updateDisplay();
+
+        const container = document.getElementById('choices-container');
+        container.innerHTML = '';
+
+        choices.forEach(choice => {
+            const btn = document.createElement('button');
+            btn.className = 'choice-btn';
+            btn.innerText = choice.text;
+            btn.onclick = () => {
+                applyEffect(choice.effect, choice.nextText);
+            };
+            container.appendChild(btn);
+        });
+    }
+
+    function applyEffect(effect, resolutionText) {
+        if (effect.health) game.health = Math.max(0, Math.min(100, game.health + effect.health));
+        if (effect.wealth) game.wealth += effect.wealth;
+        if (effect.happiness) game.happiness = Math.max(0, Math.min(100, game.happiness + effect.happiness));
+        if (effect.fame) game.fame = Math.max(0, Math.min(100, game.fame + effect.fame));
+
+        game.eventsLog.push(`<em>${resolutionText}</em>`);
+        
+        // Advance age
+        game.age++;
+
+        if (game.health <= 0 || game.age >= 80) {
+            triggerDeath(game.health <= 0 ? " succumbed to wounds and illness." : " passed away peacefully of old age.");
+        } else {
+            generateYearEvents();
+        }
+    }
+
+    function triggerDeath(causeStr) {
+        document.getElementById('game-screen').classList.add('hidden');
+        document.getElementById('epitaph-screen').classList.remove('hidden');
+
+        document.getElementById('epitaph-name').innerText = game.name;
+        document.getElementById('epitaph-dates').innerText = `${game.birthYear} - ${game.birthYear + game.age} (${eraData[game.era].name})`;
+        document.getElementById('epitaph-cause').innerText = `"${game.name} lived to age ${game.age} and${causeStr}"`;
+
+        document.getElementById('final-age').innerText = game.age;
+        document.getElementById('final-wealth').innerText = eraData[game.era].symbol + ' ' + game.wealth;
+        document.getElementById('final-fame').innerText = game.fame + '%';
+        document.getElementById('final-era').innerText = eraData[game.era].name;
+    }
+
+    function resetGame() {
+        document.getElementById('epitaph-screen').classList.add('hidden');
+        document.getElementById('setup-screen').classList.remove('hidden');
+    }
+</script>
+
+</body>
+</html>
